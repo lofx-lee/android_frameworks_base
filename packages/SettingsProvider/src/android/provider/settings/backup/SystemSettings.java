@@ -130,7 +130,10 @@ public class SystemSettings {
                 Settings.System.CV_ENABLED,
                 Settings.System.CV_DYNAMIC_ENABLED,
                 Settings.System.CV_PREFERRED_INTENSITY,
-                Settings.System.ADVANCED_REBOOT
+                Settings.System.ADVANCED_REBOOT,
+                Settings.System.VOLUME_PANEL_ON_LEFT,
+                Settings.System.NETWORK_TRAFFIC_STATE,
+                Settings.System.NETWORK_TRAFFIC_AUTOHIDE_THRESHOLD
         ));
         if (Flags.backUpSmoothDisplayAndForcePeakRefreshRate()) {
             settings.add(Settings.System.PEAK_REFRESH_RATE);
