@@ -25,6 +25,7 @@ import static android.media.AudioManager.STREAM_ALARM;
 import static android.media.AudioManager.STREAM_MUSIC;
 import static android.media.AudioManager.STREAM_RING;
 import static android.media.AudioManager.STREAM_VOICE_CALL;
+import static android.provider.Settings.System.VOLUME_PANEL_ON_LEFT;
 import static android.view.View.ACCESSIBILITY_LIVE_REGION_POLITE;
 import static android.view.View.GONE;
 import static android.view.View.INVISIBLE;
@@ -54,6 +55,7 @@ import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
+import android.database.ContentObserver;
 import android.graphics.Color;
 import android.graphics.Outline;
 import android.graphics.PixelFormat;
@@ -73,6 +75,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 import android.os.Trace;
+import android.os.UserHandle;
 import android.os.VibrationEffect;
 import android.provider.Settings;
 import android.provider.Settings.Global;
@@ -300,12 +303,18 @@ public class VolumeDialogImpl implements VolumeDialog, Dumpable,
     private ViewStub mODICaptionsTooltipViewStub;
     @VisibleForTesting View mODICaptionsTooltipView = null;
 
+    // Volume panel placement left or right
+    private boolean mVolumePanelOnLeft;
+
     private final boolean mUseBackgroundBlur;
     private Consumer<Boolean> mCrossWindowBlurEnabledListener;
     private BackgroundBlurDrawable mDialogRowsViewBackground;
     private final InteractionJankMonitor mInteractionJankMonitor;
 
     private int mWindowGravity;
+
+    // Variable to track the default row with which the panel is initially shown
+    private VolumeRow mDefaultRow = null;
 
     @VisibleForTesting
     final int mVolumeRingerIconDrawableId = R.drawable.ic_legacy_speaker_on;
@@ -327,6 +336,38 @@ public class VolumeDialogImpl implements VolumeDialog, Dumpable,
     // Optional actions for soundDose
     private Optional<List<CsdWarningAction>>
             mCsdWarningNotificationActions = Optional.of(Collections.emptyList());
+
+    private final SettingsObserver mSettingsObserver = new SettingsObserver();
+    private class SettingsObserver extends ContentObserver {
+        SettingsObserver() {
+            super(mHandler);
+        }
+
+        void observe() {
+            mContext.getContentResolver().registerContentObserver(
+                    Settings.System.getUriFor(VOLUME_PANEL_ON_LEFT),
+                    false, this, UserHandle.USER_ALL);
+        }
+
+        void stop() {
+            mContext.getContentResolver().unregisterContentObserver(this);
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            update();
+        }
+
+        void update() {
+            final boolean def = mContext.getResources().getBoolean(
+                    R.bool.config_audioPanelOnLeftSide);
+            mVolumePanelOnLeft = Settings.System.getInt(mContext.getContentResolver(),
+                    VOLUME_PANEL_ON_LEFT, def ? 1 : 0) == 1;
+            mHandler.post(() -> {
+                mControllerCallbackH.onConfigurationChanged();
+            });
+        }
+    }
 
     public VolumeDialogImpl(
             Context context,
@@ -399,6 +440,9 @@ public class VolumeDialogImpl implements VolumeDialog, Dumpable,
             };
         }
 
+            mSettingsObserver.observe();
+            mSettingsObserver.update();
+
         initDimens();
 
         mOrientation = mContext.getResources().getConfiguration().orientation;
@@ -458,6 +502,7 @@ public class VolumeDialogImpl implements VolumeDialog, Dumpable,
         if (mDevicePostureController != null) {
             mDevicePostureController.removeCallback(mDevicePostureControllerCallback);
         }
+        mSettingsObserver.stop();
     }
 
     @Override
@@ -539,6 +584,9 @@ public class VolumeDialogImpl implements VolumeDialog, Dumpable,
         lp.windowAnimations = -1;
 
         mOriginalGravity = mContext.getResources().getInteger(R.integer.volume_dialog_gravity);
+            // Clear the pre-defined gravity for left or right, this is handled by mVolumePanelOnLeft
+            mOriginalGravity &= ~(Gravity.LEFT | Gravity.RIGHT);
+            mOriginalGravity |= mVolumePanelOnLeft ? Gravity.LEFT : Gravity.RIGHT;
         mWindowGravity = Gravity.getAbsoluteGravity(mOriginalGravity,
                 mContext.getResources().getConfiguration().getLayoutDirection());
         lp.gravity = mWindowGravity;
@@ -1525,6 +1573,10 @@ public class VolumeDialogImpl implements VolumeDialog, Dumpable,
             initDialog(lockTaskModeState); // resets mShowing to false
             mConfigurableTexts.update();
             mConfigChanged = false;
+        }
+
+        if (mDefaultRow == null) {
+            mDefaultRow = getActiveRow();
         }
 
         initSettingsH(lockTaskModeState);
