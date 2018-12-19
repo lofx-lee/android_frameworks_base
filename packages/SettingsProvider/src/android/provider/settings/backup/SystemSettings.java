@@ -133,7 +133,8 @@ public class SystemSettings {
                 Settings.System.PEAK_REFRESH_RATE,
                 Settings.System.MIN_REFRESH_RATE,
                 Settings.System.ACCESSIBILITY_FORCE_INVERT_COLOR_OVERRIDE_PACKAGES_TO_DISABLE,
-                Settings.System.ADVANCED_REBOOT
+                Settings.System.ADVANCED_REBOOT,
+                Settings.System.VOLUME_PANEL_ON_LEFT
         ));
         return settings.toArray(new String[0]);
     }
