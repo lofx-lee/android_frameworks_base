@@ -153,12 +153,12 @@
                 <com.android.systemui.statusbar.CustomStatusBarItemHolder
                     android:id="@+id/network_traffic_holder"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="@dimen/status_bar_icon_container_height"
                     android:layoutDirection="ltr"
                     android:gravity="center"
                     android:paddingLeft="2dp"
                     >
-                    <com.android.internal.statusbar.NetworkTraffic
+                    <com.android.systemui.statusbar.NetworkTraffic
                         android:id="@+id/network_traffic"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"

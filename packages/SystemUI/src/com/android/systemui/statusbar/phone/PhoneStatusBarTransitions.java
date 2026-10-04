@@ -25,7 +25,7 @@ import android.view.View;
 import com.android.systemui.res.R;
 import com.android.systemui.shared.statusbar.phone.BarTransitions;
 
-import com.android.internal.statusbar.NetworkTraffic;
+import com.android.systemui.statusbar.NetworkTraffic;
 
 public final class PhoneStatusBarTransitions extends BarTransitions {
     private static final float ICON_ALPHA_WHEN_NOT_OPAQUE = 1;

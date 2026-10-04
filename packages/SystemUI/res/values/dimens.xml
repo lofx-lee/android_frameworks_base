@@ -2307,4 +2307,5 @@
     <dimen name="usb_device_dialog_button_background_radius_full">360dp</dimen>
     <!-- Usb Device Dialog values end -->
 
+    <dimen name="status_bar_network_traffic_text_size">8.6sp</dimen>
 </resources>
